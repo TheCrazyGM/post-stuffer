@@ -15,7 +15,7 @@ import (
 //   - author: the author of the post
 //   - permlink: the permlink of the post
 //   - title: the title of the post
-//   - json_metadata: the JSON metadata of the post
+//   - tags: the tags of the post
 //   - block_num: the block number that the post was published in
 //   - timestamp: the timestamp of the post
 //
@@ -35,7 +35,7 @@ func initDB() (*sql.DB, error) {
 		author TEXT,
 		permlink TEXT,
 		title TEXT,
-		json_metadata TEXT,
+		tags TEXT,
 		block_num INTEGER,
 		timestamp TEXT
 	);

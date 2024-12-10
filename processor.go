@@ -26,7 +26,7 @@ type BlockProcessor struct {
 // already exists in the database, this statement will not overwrite it.
 func NewBlockProcessor(db *sql.DB, config *Config) (*BlockProcessor, error) {
 	stmt, err := db.Prepare(`
-		INSERT INTO posts (url, author, permlink, title, json_metadata, block_num, timestamp)
+		INSERT INTO posts (url, author, permlink, title, tags, block_num, timestamp)
 		VALUES (?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(url) DO NOTHING
 	`)
@@ -83,13 +83,34 @@ func (bp *BlockProcessor) processBlock(block Block) (int, error) {
 				continue // Skip comments/replies
 			}
 
-			var metadata Metadata
+			var metadata struct {
+				Tags interface{} `json:"tags"`
+			}
+			var tagsJson string
 			if value.JsonMetadata != "" {
 				if err := json.Unmarshal([]byte(value.JsonMetadata), &metadata); err != nil {
-					// log.Printf("Error parsing metadata for post %s", constructAuthorPerm(value.Author, value.Permlink))
-					continue
+					// If parsing fails, try to handle it as a single tag string
+					metadata.Tags = value.JsonMetadata
 				}
-				// log.Printf("Parsed metadata: %+v", metadata) // Log parsed metadata
+
+				// Convert tags to JSON string based on type
+				switch v := metadata.Tags.(type) {
+				case string:
+					// If it's a single string, create a JSON array with one element
+					tagsJson = fmt.Sprintf("[%q]", v)
+				case []interface{}:
+					// If it's already an array, convert it to JSON
+					tagsBytes, err := json.Marshal(v)
+					if err == nil {
+						tagsJson = string(tagsBytes)
+					} else {
+						tagsJson = "[]"
+					}
+				default:
+					tagsJson = "[]"
+				}
+			} else {
+				tagsJson = "[]"
 			}
 
 			// Retry the database operation with backoff
@@ -99,7 +120,7 @@ func (bp *BlockProcessor) processBlock(block Block) (int, error) {
 					value.Author,
 					value.Permlink,
 					value.Title,
-					value.JsonMetadata,
+					tagsJson,
 					int(blockNum),
 					block.Timestamp,
 				)
