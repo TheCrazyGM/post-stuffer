@@ -86,7 +86,7 @@ func (bp *BlockProcessor) processBlock(block Block) (int, error) {
 			var metadata Metadata
 			if value.JsonMetadata != "" {
 				if err := json.Unmarshal([]byte(value.JsonMetadata), &metadata); err != nil {
-					//log.Printf("Error parsing metadata for post %s", constructAuthorPerm(value.Author, value.Permlink))
+					// log.Printf("Error parsing metadata for post %s", constructAuthorPerm(value.Author, value.Permlink))
 					continue
 				}
 				// log.Printf("Parsed metadata: %+v", metadata) // Log parsed metadata
@@ -105,7 +105,6 @@ func (bp *BlockProcessor) processBlock(block Block) (int, error) {
 				)
 				return err
 			})
-
 			if err != nil {
 				return processedCount, fmt.Errorf("error inserting post: %v", err)
 			}
